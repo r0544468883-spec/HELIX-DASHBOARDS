@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { templateByKey, VERTICALS } from '@/lib/templates';
-import { resolveTemplate } from '@/lib/resolve';
+import { resolveDashboard } from '@/lib/resolve-server';
 import DashboardView from '@/components/DashboardView';
 import DigestButton from '@/components/DigestButton';
 
@@ -19,7 +19,7 @@ export default async function DashboardPage({
   const { vertical } = await searchParams;
   if (!templateByKey(key)) notFound();
 
-  const { name, widgets, dataById } = resolveTemplate(key);
+  const { name, widgets, dataById, persisted } = await resolveDashboard(key);
   const bundle = vertical ? VERTICALS.find((v) => v.key === vertical) : undefined;
 
   return (
@@ -47,7 +47,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      <DashboardView widgets={widgets} dataById={dataById} />
+      <DashboardView widgets={widgets} dataById={dataById} persisted={persisted} department={key} />
     </main>
   );
 }

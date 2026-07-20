@@ -105,6 +105,17 @@ do $$ begin
   create policy mem_self on memberships for all using (user_id = auth.uid());
 exception when duplicate_object then null; end $$;
 
+-- Create a workspace + owner membership atomically (SECURITY DEFINER bypasses
+-- the chicken-and-egg RLS on a brand-new workspace).
+create or replace function create_workspace(ws_name text, ws_vertical text default null)
+returns uuid language plpgsql security definer as $$
+declare new_id uuid;
+begin
+  insert into workspaces (name, vertical) values (ws_name, ws_vertical) returning id into new_id;
+  insert into memberships (workspace_id, user_id, role) values (new_id, auth.uid(), 'owner');
+  return new_id;
+end $$;
+
 -- widget_library is public read (catalog).
 alter table widget_library enable row level security;
 do $$ begin

@@ -10,7 +10,13 @@ export default function Home() {
   const model = modelInUse();
   return (
     <main className="max-w-[1120px] mx-auto px-5 md:px-10 py-10">
-      <div className="mb-1 text-[13px] font-bold text-emerald-600">HELIX DASHBOARDS</div>
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-[13px] font-bold text-emerald-600">HELIX DASHBOARDS</div>
+        <div className="flex items-center gap-3 text-[13px] font-semibold">
+          <Link href="/connect" className="text-[var(--ink-secondary)] hover:text-[var(--ink)]">🔌 חיבורים</Link>
+          <Link href="/login" className="text-[var(--ink-secondary)] hover:text-[var(--ink)]">התחברות</Link>
+        </div>
+      </div>
       <h1 className="text-[clamp(26px,5vw,40px)] font-black tracking-tight mb-1">הדשבורדים של העסק שלך</h1>
       <p className="text-[var(--ink-secondary)] text-[15px] mb-8">
         בחר את סוג העסק שלך — ונטען לך את הדשבורדים המתאימים. הכל בעברית, עם עדכונים אוטומטיים ומסירה בוואטסאפ/טלגרם.
