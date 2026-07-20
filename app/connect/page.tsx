@@ -15,6 +15,13 @@ const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fie
     { key: 'shop', label: 'Shop domain', placeholder: 'xxx.myshopify.com' },
     { key: 'access_token', label: 'Admin API token', placeholder: 'shpat_…' },
   ] },
+  { id: 'plausible', name: 'Plausible', emoji: '📊', fields: [
+    { key: 'site_id', label: 'Site ID', placeholder: 'example.com' },
+    { key: 'api_key', label: 'API Key', placeholder: 'xxxxx' },
+  ] },
+  { id: 'mailchimp', name: 'Mailchimp', emoji: '✉️', fields: [
+    { key: 'api_key', label: 'API Key', placeholder: 'xxxx-usXX' },
+  ] },
 ];
 
 export default function ConnectPage() {

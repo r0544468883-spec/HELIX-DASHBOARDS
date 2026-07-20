@@ -3,6 +3,8 @@ import { fetchGa4Metrics } from './ga4';
 import { fetchMetaMetrics } from './meta';
 import { fetchStripeMetrics } from './stripe';
 import { fetchShopifyMetrics } from './shopify';
+import { fetchPlausibleMetrics } from './plausible';
+import { fetchMailchimpMetrics } from './mailchimp';
 import { accessTokenFromRefresh } from '@/lib/google-token';
 import { decryptConfig } from '@/lib/secrets';
 
@@ -29,10 +31,18 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
       if (!config.shop || !config.access_token) return [];
       return fetchShopifyMetrics(config.shop, config.access_token, days);
     }
+    if (provider === 'plausible') {
+      if (!config.site_id || !config.api_key) return [];
+      return fetchPlausibleMetrics(config.site_id, config.api_key, config.base_url || undefined, days);
+    }
+    if (provider === 'mailchimp') {
+      if (!config.api_key) return [];
+      return fetchMailchimpMetrics(config.api_key);
+    }
   } catch {
     return [];
   }
   return [];
 }
 
-export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify'] as const;
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp'] as const;
