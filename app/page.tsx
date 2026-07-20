@@ -15,6 +15,8 @@ export default function Home() {
         <div className="text-[13px] font-bold text-emerald-600">HELIX DASHBOARDS</div>
         <div className="flex items-center gap-3 text-[13px] font-semibold">
           <Link href="/connect" className="text-[var(--ink-secondary)] hover:text-[var(--ink)]">🔌 חיבורים</Link>
+          <Link href="/digest" className="text-[var(--ink-secondary)] hover:text-[var(--ink)]">📤 סיכומים</Link>
+          <Link href="/deals" className="text-[var(--ink-secondary)] hover:text-[var(--ink)]">💼 צנרת</Link>
           <Link href="/login" className="text-[var(--ink-secondary)] hover:text-[var(--ink)]">התחברות</Link>
         </div>
       </div>

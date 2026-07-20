@@ -105,6 +105,48 @@ do $$ begin
   create policy mem_self on memberships for all using (user_id = auth.uid());
 exception when duplicate_object then null; end $$;
 
+-- ── Digest subscriptions — scheduled push of a dashboard to a channel ──
+create table if not exists digest_subscriptions (
+  id           uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id) on delete cascade,
+  department   text not null,                        -- which dashboard
+  channel      text not null,                        -- telegram | whatsapp | email
+  target       text not null,                        -- chat id / phone / email
+  hour_utc     int default 5,                        -- daily send hour (UTC)
+  active       boolean default true,
+  created_at   timestamptz default now()
+);
+
+-- ── Telegram bot links — map a chat to a workspace so the bot returns real data ──
+create table if not exists bot_links (
+  chat_id      text primary key,
+  workspace_id uuid references workspaces(id) on delete cascade,
+  created_at   timestamptz default now()
+);
+
+-- ── Deals — native sales pipeline (atomic-crm pattern) → real Sales dashboard ──
+create table if not exists deals (
+  id           uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id) on delete cascade,
+  title        text not null,
+  company      text,
+  value        numeric default 0,
+  stage        text default 'new',                   -- new | qualified | proposal | won | lost
+  owner        text,
+  created_at   timestamptz default now(),
+  closed_at    timestamptz
+);
+create index if not exists idx_deals_ws on deals(workspace_id, stage);
+
+alter table digest_subscriptions enable row level security;
+alter table bot_links            enable row level security;
+alter table deals                enable row level security;
+do $$ begin
+  create policy digest_member on digest_subscriptions for all using (is_member(workspace_id));
+  create policy botlink_member on bot_links for all using (is_member(workspace_id));
+  create policy deals_member on deals for all using (is_member(workspace_id));
+exception when duplicate_object then null; end $$;
+
 -- Create a workspace + owner membership atomically (SECURITY DEFINER bypasses
 -- the chicken-and-egg RLS on a brand-new workspace).
 create or replace function create_workspace(ws_name text, ws_vertical text default null)

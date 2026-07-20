@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { runConnector, LIVE_PROVIDERS } from '@/lib/connectors/registry';
 import { upsertMetrics } from '@/lib/connectors/upsert';
+import { encryptConfig } from '@/lib/secrets';
+import { maybeExchangeMetaLongLived } from '@/lib/connectors/meta-token';
 import type { ConnectorConfig } from '@/lib/connectors/types';
 
 export const dynamic = 'force-dynamic';
@@ -26,11 +28,16 @@ export async function POST(req: Request) {
 
   const config = body.config ?? {};
   try {
+    // Meta short-lived tokens → exchange to a 60-day long-lived token when possible.
+    if (provider === 'meta_ads' && config.access_token) {
+      config.access_token = await maybeExchangeMetaLongLived(config.access_token);
+    }
+    // runConnector expects plaintext; encrypt only when persisting.
     const points = await runConnector(provider, config, body.days ?? 30);
-    // Upsert the connection with its config + connected status.
+    const encrypted = encryptConfig(config);
     const { data: existing } = await supabase.from('connections').select('id, config').eq('workspace_id', ws).eq('provider', provider).maybeSingle();
-    if (existing) await supabase.from('connections').update({ status: 'connected', config: { ...(existing.config ?? {}), ...config } }).eq('id', existing.id);
-    else await supabase.from('connections').insert({ workspace_id: ws, provider, status: 'connected', config });
+    if (existing) await supabase.from('connections').update({ status: 'connected', config: { ...(existing.config ?? {}), ...encrypted } }).eq('id', existing.id);
+    else await supabase.from('connections').insert({ workspace_id: ws, provider, status: 'connected', config: encrypted });
 
     const synced = await upsertMetrics(supabase, ws, points);
     return NextResponse.json({ ok: true, synced });

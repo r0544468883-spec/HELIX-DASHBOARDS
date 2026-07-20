@@ -29,7 +29,10 @@ export default async function DashboardPage({
           <Link href="/" className="text-[12px] font-bold text-emerald-600">← HELIX DASHBOARDS</Link>
           <h1 className="text-[clamp(20px,4vw,30px)] font-black tracking-tight">{name}</h1>
         </div>
-        <DigestButton templateKey={key} />
+        <div className="flex items-center gap-2">
+          {key === 'sales' && <Link href="/deals" className="text-[13px] font-bold px-4 py-2 rounded-lg bg-black/5 text-[var(--ink-secondary)] hover:text-[var(--ink)]">💼 נהל צנרת</Link>}
+          <DigestButton templateKey={key} />
+        </div>
       </div>
 
       {bundle && (

@@ -14,7 +14,7 @@ export default function WidgetCard({
   onRemove?: () => void;
 }) {
   return (
-    <div className="h-full flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 overflow-hidden">
+    <div className="h-full flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2 shrink-0">
         <div className="text-[13px] font-bold text-[var(--ink-secondary)] truncate drag-handle cursor-move">{title}</div>
         {editing && onRemove && (

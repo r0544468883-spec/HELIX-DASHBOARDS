@@ -4,10 +4,12 @@ import { fetchMetaMetrics } from './meta';
 import { fetchStripeMetrics } from './stripe';
 import { fetchShopifyMetrics } from './shopify';
 import { accessTokenFromRefresh } from '@/lib/google-token';
+import { decryptConfig } from '@/lib/secrets';
 
 // Run a connector by provider from its stored config. Returns [] (never throws)
 // when the config is incomplete, so a cron pass over many connections is resilient.
-export async function runConnector(provider: string, config: ConnectorConfig, days = 30): Promise<MetricPoint[]> {
+export async function runConnector(provider: string, storedConfig: ConnectorConfig, days = 30): Promise<MetricPoint[]> {
+  const config = decryptConfig(storedConfig); // secrets are encrypted at rest
   try {
     if (provider === 'ga4') {
       if (!config.refresh_token || !config.propertyId) return [];

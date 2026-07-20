@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { exchangeCode } from '@/lib/google-oauth';
 import { createClient } from '@/lib/supabase/server';
+import { encryptValue } from '@/lib/secrets';
 
 // Google OAuth callback — store tokens in httpOnly cookies and record/So upsert a
 // 'ga4' connection row for the current workspace.
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
       if (ws) {
         // Persist the refresh token in config so the cron sync can run headless.
         // (MVP: see security note in lib/connectors/types.ts.)
-        const cfg = token.refresh_token ? { refresh_token: token.refresh_token } : {};
+        const cfg = token.refresh_token ? { refresh_token: encryptValue(token.refresh_token) } : {};
         const { data: existing } = await supabase.from('connections').select('id, config').eq('workspace_id', ws).eq('provider', 'ga4').maybeSingle();
         if (existing) await supabase.from('connections').update({ status: 'connected', config: { ...(existing.config ?? {}), ...cfg } }).eq('id', existing.id);
         else await supabase.from('connections').insert({ workspace_id: ws, provider: 'ga4', label: 'Google Analytics 4', status: 'connected', config: cfg });
