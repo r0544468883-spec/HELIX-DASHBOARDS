@@ -2,7 +2,7 @@
 // metric_points rows (source='ga4'). Sync writes these to Supabase; widgets then
 // read them via lib/metrics-db. First metrics: sessions + conversions by day.
 
-export type MetricPoint = { source: string; metric: string; dims: Record<string, string>; ts: string; value: number };
+import type { MetricPoint } from './types';
 
 type Ga4Row = { dimensionValues: { value: string }[]; metricValues: { value: string }[] };
 

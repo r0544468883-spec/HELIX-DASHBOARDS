@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { fetchGa4Metrics } from '@/lib/connectors/ga4';
+import { getValidGoogleToken } from '@/lib/google-token';
+import { upsertMetrics } from '@/lib/connectors/upsert';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   const propertyId = (body.propertyId ?? '').replace(/^properties\//, '');
   if (!propertyId) return NextResponse.json({ error: 'property_id_required' }, { status: 400 });
 
-  const token = (await cookies()).get('g_token')?.value;
+  const token = await getValidGoogleToken();
   if (!token) return NextResponse.json({ error: 'google_not_connected' }, { status: 401 });
 
   const supabase = await createClient();
@@ -25,16 +26,12 @@ export async function POST(req: Request) {
 
   try {
     const points = await fetchGa4Metrics(token, propertyId, body.days ?? 30);
-    // Persist the property id on the connection for later scheduled syncs.
-    await supabase.from('connections').update({ config: { propertyId } }).eq('workspace_id', ws).eq('provider', 'ga4');
+    // Persist propertyId on the connection (merge, keep refresh_token) for cron.
+    const { data: conn } = await supabase.from('connections').select('config').eq('workspace_id', ws).eq('provider', 'ga4').maybeSingle();
+    await supabase.from('connections').update({ config: { ...(conn?.config ?? {}), propertyId } }).eq('workspace_id', ws).eq('provider', 'ga4');
 
-    const rows = points.map((p) => ({ workspace_id: ws, source: p.source, metric: p.metric, dims: p.dims, ts: p.ts, value: p.value }));
-    // Chunked upsert on the unique key so re-syncs update in place.
-    for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await supabase.from('metric_points').upsert(rows.slice(i, i + 500), { onConflict: 'workspace_id,source,metric,dims,ts' });
-      if (error) throw new Error(error.message);
-    }
-    return NextResponse.json({ ok: true, synced: rows.length });
+    const synced = await upsertMetrics(supabase, ws, points);
+    return NextResponse.json({ ok: true, synced });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

@@ -23,9 +23,12 @@ export async function GET(request: Request) {
       const { data: mem } = await supabase.from('memberships').select('workspace_id').eq('user_id', user.id).limit(1).maybeSingle();
       const ws = mem?.workspace_id as string | undefined;
       if (ws) {
-        const { data: existing } = await supabase.from('connections').select('id').eq('workspace_id', ws).eq('provider', 'ga4').maybeSingle();
-        if (existing) await supabase.from('connections').update({ status: 'connected' }).eq('id', existing.id);
-        else await supabase.from('connections').insert({ workspace_id: ws, provider: 'ga4', label: 'Google Analytics 4', status: 'connected' });
+        // Persist the refresh token in config so the cron sync can run headless.
+        // (MVP: see security note in lib/connectors/types.ts.)
+        const cfg = token.refresh_token ? { refresh_token: token.refresh_token } : {};
+        const { data: existing } = await supabase.from('connections').select('id, config').eq('workspace_id', ws).eq('provider', 'ga4').maybeSingle();
+        if (existing) await supabase.from('connections').update({ status: 'connected', config: { ...(existing.config ?? {}), ...cfg } }).eq('id', existing.id);
+        else await supabase.from('connections').insert({ workspace_id: ws, provider: 'ga4', label: 'Google Analytics 4', status: 'connected', config: cfg });
       }
     }
     return NextResponse.redirect(`${origin}/connect?connected=ga4`);

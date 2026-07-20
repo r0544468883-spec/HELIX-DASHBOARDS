@@ -2,42 +2,50 @@
 
 import { useState } from 'react';
 
-// Connections surface — connect data sources and sync them into metric_points.
-// GA4 is the first live connector; others are placeholders per the reuse plan.
-const PROVIDERS = [
-  { id: 'ga4', name: 'Google Analytics 4', emoji: '📈', live: true },
-  { id: 'meta_ads', name: 'Meta Ads', emoji: '📣', live: false },
-  { id: 'stripe', name: 'Stripe', emoji: '💳', live: false },
-  { id: 'shopify', name: 'Shopify', emoji: '🛒', live: false },
-  { id: 'hubspot', name: 'HubSpot (CRM)', emoji: '🤝', live: false },
+// Field spec per key-based provider (GA4 uses Google OAuth instead).
+type Field = { key: string; label: string; placeholder: string };
+const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fields?: Field[] }[] = [
+  { id: 'ga4', name: 'Google Analytics 4', emoji: '📈', oauth: true, fields: [{ key: 'propertyId', label: 'GA4 Property ID', placeholder: 'מספר' }] },
+  { id: 'meta_ads', name: 'Meta Ads', emoji: '📣', fields: [
+    { key: 'access_token', label: 'Access Token', placeholder: 'EAAB…' },
+    { key: 'ad_account_id', label: 'Ad Account ID', placeholder: 'act_123…' },
+  ] },
+  { id: 'stripe', name: 'Stripe', emoji: '💳', fields: [{ key: 'secret_key', label: 'Secret Key', placeholder: 'sk_live_…' }] },
+  { id: 'shopify', name: 'Shopify', emoji: '🛒', fields: [
+    { key: 'shop', label: 'Shop domain', placeholder: 'xxx.myshopify.com' },
+    { key: 'access_token', label: 'Admin API token', placeholder: 'shpat_…' },
+  ] },
 ];
 
 export default function ConnectPage() {
-  const [propertyId, setPropertyId] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, Record<string, string>>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<Record<string, string>>({});
 
-  async function syncGa4() {
-    if (!propertyId.trim()) return setMsg('הכנס GA4 Property ID.');
-    setBusy(true); setMsg(null);
+  function set(pid: string, k: string, v: string) {
+    setValues((s) => ({ ...s, [pid]: { ...(s[pid] ?? {}), [k]: v } }));
+  }
+
+  async function sync(pid: string) {
+    setBusy(pid); setMsg((m) => ({ ...m, [pid]: '' }));
+    const cfg = values[pid] ?? {};
     try {
-      const res = await fetch('/api/connectors/ga4/sync', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ propertyId: propertyId.trim() }),
-      });
+      const endpoint = pid === 'ga4' ? '/api/connectors/ga4/sync' : '/api/connectors/sync';
+      const body = pid === 'ga4' ? { propertyId: cfg.propertyId } : { provider: pid, config: cfg };
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'error');
-      setMsg(`✓ סונכרנו ${json.synced} נקודות נתונים. חזור לדשבורד השיווק.`);
+      setMsg((m) => ({ ...m, [pid]: `✓ סונכרנו ${json.synced} נקודות. חזור לדשבורד.` }));
     } catch (e) {
-      setMsg('שגיאה: ' + (e as Error).message);
-    } finally { setBusy(false); }
+      setMsg((m) => ({ ...m, [pid]: 'שגיאה: ' + (e as Error).message }));
+    } finally { setBusy(null); }
   }
 
   return (
     <main className="max-w-[720px] mx-auto px-5 md:px-8 py-10">
       <div className="mb-1 text-[13px] font-bold text-emerald-600">HELIX DASHBOARDS</div>
       <h1 className="text-[28px] font-black tracking-tight mb-1">חיבור מקורות נתונים</h1>
-      <p className="text-[var(--ink-secondary)] text-[15px] mb-6">חבר את המערכות שלך — הנתונים יזרמו לדשבורדים אוטומטית.</p>
+      <p className="text-[var(--ink-secondary)] text-[15px] mb-6">חבר את המערכות שלך — הנתונים יזרמו לדשבורדים אוטומטית (כולל סנכרון יומי).</p>
 
       <div className="space-y-3">
         {PROVIDERS.map((p) => (
@@ -45,30 +53,25 @@ export default function ConnectPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="text-[22px]">{p.emoji}</span>
-                <div>
-                  <div className="text-[15px] font-bold">{p.name}</div>
-                  <div className="text-[12px] text-[var(--ink-secondary)]">{p.live ? 'זמין' : 'בקרוב'}</div>
-                </div>
+                <div className="text-[15px] font-bold">{p.name}</div>
               </div>
-              {p.live ? (
-                <a href="/api/google/auth" className="text-[13px] font-bold px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">חבר Google</a>
-              ) : (
-                <span className="text-[13px] text-[var(--ink-secondary)] px-4 py-2">בקרוב</span>
-              )}
+              {p.oauth && <a href="/api/google/auth" className="text-[13px] font-bold px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">חבר Google</a>}
             </div>
-            {p.id === 'ga4' && (
-              <div className="mt-3 flex flex-wrap gap-2 items-center border-t border-[var(--border)] pt-3">
-                <input className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[14px] max-w-[220px] outline-none focus:border-emerald-500" dir="ltr"
-                  value={propertyId} onChange={(e) => setPropertyId(e.target.value)} placeholder="GA4 Property ID (מספר)" />
-                <button onClick={syncGa4} disabled={busy} className="text-[13px] font-bold px-4 py-2 rounded-lg bg-black text-white hover:opacity-90 disabled:opacity-50">
-                  {busy ? 'מסנכרן…' : 'סנכרן עכשיו'}
-                </button>
-              </div>
-            )}
+            <div className="mt-3 flex flex-wrap gap-2 items-center border-t border-[var(--border)] pt-3">
+              {p.fields?.map((f) => (
+                <input key={f.key} dir="ltr" placeholder={f.label + ' — ' + f.placeholder}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[13px] flex-1 min-w-[160px] outline-none focus:border-emerald-500"
+                  value={values[p.id]?.[f.key] ?? ''} onChange={(e) => set(p.id, f.key, e.target.value)} />
+              ))}
+              <button onClick={() => sync(p.id)} disabled={busy === p.id}
+                className="text-[13px] font-bold px-4 py-2 rounded-lg bg-black text-white hover:opacity-90 disabled:opacity-50">
+                {busy === p.id ? 'מסנכרן…' : 'סנכרן'}
+              </button>
+            </div>
+            {msg[p.id] && <p className="mt-2 text-[13px]">{msg[p.id]}</p>}
           </div>
         ))}
       </div>
-      {msg && <p className="mt-4 text-[14px]">{msg}</p>}
     </main>
   );
 }

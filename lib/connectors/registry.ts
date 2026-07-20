@@ -1,0 +1,36 @@
+import type { MetricPoint, ConnectorConfig } from './types';
+import { fetchGa4Metrics } from './ga4';
+import { fetchMetaMetrics } from './meta';
+import { fetchStripeMetrics } from './stripe';
+import { fetchShopifyMetrics } from './shopify';
+import { accessTokenFromRefresh } from '@/lib/google-token';
+
+// Run a connector by provider from its stored config. Returns [] (never throws)
+// when the config is incomplete, so a cron pass over many connections is resilient.
+export async function runConnector(provider: string, config: ConnectorConfig, days = 30): Promise<MetricPoint[]> {
+  try {
+    if (provider === 'ga4') {
+      if (!config.refresh_token || !config.propertyId) return [];
+      const token = await accessTokenFromRefresh(config.refresh_token);
+      if (!token) return [];
+      return fetchGa4Metrics(token, config.propertyId, days);
+    }
+    if (provider === 'meta_ads') {
+      if (!config.access_token || !config.ad_account_id) return [];
+      return fetchMetaMetrics(config.access_token, config.ad_account_id, days);
+    }
+    if (provider === 'stripe') {
+      if (!config.secret_key) return [];
+      return fetchStripeMetrics(config.secret_key, days);
+    }
+    if (provider === 'shopify') {
+      if (!config.shop || !config.access_token) return [];
+      return fetchShopifyMetrics(config.shop, config.access_token, days);
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
+
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify'] as const;
