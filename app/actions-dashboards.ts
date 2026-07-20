@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { templateByKey } from '@/lib/templates';
+import { templateByKey, VERTICALS } from '@/lib/templates';
 import type { WidgetLayout } from '@/lib/types';
 
 type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
@@ -54,6 +54,48 @@ export async function instantiateTemplate(department: string): Promise<{ id?: st
 
   revalidatePath(`/dashboard/${department}`);
   return { id: dash!.id as string };
+}
+
+// Add a widget from the library to a department's dashboard. Places it at the
+// bottom of the grid. Returns after revalidate so the page re-resolves its data.
+export async function addWidget(department: string, input: {
+  widget_type: string; title: string; metric: string;
+}): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'unauthorized' };
+  const ws = await currentWorkspace(supabase, user.id);
+  if (!ws) return { error: 'no_workspace' };
+
+  const { data: dash } = await supabase
+    .from('dashboards').select('id').eq('workspace_id', ws).eq('department', department).maybeSingle();
+  if (!dash) return { error: 'no_dashboard' };
+
+  // Find the current max Y to append below existing widgets.
+  const { data: rows } = await supabase.from('dashboard_widgets').select('layout').eq('dashboard_id', dash.id);
+  const maxY = (rows ?? []).reduce((m, r) => Math.max(m, ((r.layout as WidgetLayout)?.y ?? 0) + ((r.layout as WidgetLayout)?.h ?? 0)), 0);
+
+  const { error } = await supabase.from('dashboard_widgets').insert({
+    dashboard_id: dash.id, widget_type: input.widget_type, title: input.title, metric: input.metric,
+    config: { format: 'number' }, layout: { x: 0, y: maxY, w: input.widget_type === 'kpi' ? 3 : 6, h: input.widget_type === 'kpi' ? 3 : 5 },
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/dashboard/${department}`);
+  return { ok: true };
+}
+
+// Onboarding: create the workspace with the chosen vertical and instantiate every
+// dashboard in its bundle. Returns the first dashboard's department to land on.
+export async function onboardVertical(verticalKey: string): Promise<{ first?: string; error?: string }> {
+  const v = VERTICALS.find((x) => x.key === verticalKey);
+  if (!v) return { error: 'no_vertical' };
+  const ws = await ensureWorkspace(verticalKey);
+  if ('error' in ws && ws.error) return { error: ws.error };
+  for (const dept of v.dashboards) {
+    const r = await instantiateTemplate(dept);
+    if ('error' in r && r.error) return { error: r.error };
+  }
+  return { first: v.dashboards[0] };
 }
 
 export async function saveLayout(widgetId: string, layout: WidgetLayout): Promise<{ ok?: boolean; error?: string }> {

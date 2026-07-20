@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Layout } from 'react-grid-layout';
 import type { WidgetDef, WidgetData } from '@/lib/types';
 import DashboardCanvas from './DashboardCanvas';
+import AddWidgetPanel from './AddWidgetPanel';
 import { saveLayout, removeWidget, instantiateTemplate, ensureWorkspace } from '@/app/actions-dashboards';
 
 // Client wrapper holding the editable widget list + layout state.
@@ -50,7 +51,7 @@ export default function DashboardView({
 
   return (
     <div>
-      {!persisted && (
+      {!persisted ? (
         <div className="flex items-center gap-3 mb-3">
           <button onClick={saveToMyDashboards} disabled={saving}
             className="text-[13px] font-bold px-4 py-2 rounded-lg bg-black/5 text-[var(--ink-secondary)] hover:text-[var(--ink)] disabled:opacity-50">
@@ -58,6 +59,8 @@ export default function DashboardView({
           </button>
           {msg && <span className="text-[13px] text-red-600">{msg}</span>}
         </div>
+      ) : (
+        <div className="mb-3"><AddWidgetPanel department={department} /></div>
       )}
       <DashboardCanvas widgets={widgets} dataById={dataById} onLayoutChange={onLayoutChange} onRemove={onRemove} />
     </div>

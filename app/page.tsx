@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TEMPLATES, VERTICALS } from '@/lib/templates';
 import { modelInUse } from '@/lib/ollama';
+import VerticalGrid from '@/components/VerticalGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,16 +25,7 @@ export default function Home() {
       </p>
 
       <h2 className="text-[15px] font-bold mb-3">לפי סוג עסק</h2>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10">
-        {VERTICALS.map((v) => (
-          <Link key={v.key} href={`/dashboard/${v.dashboards[0]}?vertical=${v.key}`}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-emerald-500 transition-colors">
-            <div className="text-[24px] mb-1">{v.emoji}</div>
-            <div className="text-[14px] font-bold">{v.name}</div>
-            <div className="text-[11px] text-[var(--ink-secondary)] mt-1">{v.dashboards.length} דשבורדים · {v.signatureKpis.slice(0, 2).join(' · ')}</div>
-          </Link>
-        ))}
-      </div>
+      <VerticalGrid verticals={VERTICALS} />
 
       <h2 className="text-[15px] font-bold mb-3">כל הדשבורדים (לפי מחלקה)</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
