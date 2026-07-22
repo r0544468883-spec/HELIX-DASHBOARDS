@@ -6,6 +6,7 @@ import { fetchShopifyMetrics } from './shopify';
 import { fetchPlausibleMetrics } from './plausible';
 import { fetchMailchimpMetrics } from './mailchimp';
 import { fetchHelixOpsMetrics } from './helixops';
+import { fetchHelixSdrMetrics } from './helix-sdr';
 import { fetchRavMesserMetrics } from './ravmesser';
 import { fetchActiveTrailMetrics } from './activetrail';
 import { fetchInforuMetrics } from './inforu';
@@ -47,6 +48,12 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
       if (!config.base_url || !config.api_key || !config.ops_workspace_id) return [];
       return fetchHelixOpsMetrics(config.base_url, config.api_key, config.ops_workspace_id);
     }
+    if (provider === 'helix_sdr') {
+      const baseUrl = config.base_url || process.env.SDR_EXPORT_URL;
+      const secret = config.api_key || process.env.EXPORT_SECRET;
+      if (!baseUrl || !secret || !config.sdr_workspace_id) return [];
+      return fetchHelixSdrMetrics(baseUrl, secret, config.sdr_workspace_id);
+    }
     if (provider === 'ravmesser') {
       if (!config.api_key) return [];
       return fetchRavMesserMetrics(config.api_key, config.api_secret);
@@ -65,4 +72,4 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
   return [];
 }
 
-export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'ravmesser', 'activetrail', 'inforu'] as const;
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'helix_sdr', 'ravmesser', 'activetrail', 'inforu'] as const;

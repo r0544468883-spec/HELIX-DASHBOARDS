@@ -37,6 +37,11 @@ const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fie
     { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
     { key: 'ops_workspace_id', label: 'OPS Workspace ID', placeholder: 'uuid' },
   ] },
+  { id: 'helix_sdr', name: 'HELIX SDR-BDR (מכירות + מחזור לקוח)', emoji: '🤖', fields: [
+    { key: 'base_url', label: 'HELIX SDR URL', placeholder: 'https://sdr.helix…' },
+    { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
+    { key: 'sdr_workspace_id', label: 'SDR Workspace ID', placeholder: 'uuid' },
+  ] },
 ];
 
 export default function ConnectPage() {
