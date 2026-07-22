@@ -118,6 +118,17 @@ export const TEMPLATES: DepartmentTemplate[] = [
     ],
   },
   {
+    key: 'campaigns', department: 'campaigns', name: 'קמפיינים A/B',
+    widgets: [
+      kpi(9, 'campaign_impressions', 'חשיפות', 'number'),
+      kpi(6, 'campaign_views', 'צפיות', 'number'),
+      kpi(3, 'campaign_clicks', 'קליקים', 'number'),
+      kpi(0, 'campaign_variants', 'גרסאות שרצות', 'number'),
+      { widget_type: 'bar', title: 'קליקים לפי ערוץ', metric: 'campaign_clicks', config: { format: 'number' }, layout: { x: 0, y: 3, w: 6, h: 5 } },
+      { widget_type: 'line', title: 'חשיפות לאורך זמן', metric: 'campaign_impressions', config: { format: 'number' }, layout: { x: 6, y: 3, w: 6, h: 5 } },
+    ],
+  },
+  {
     key: 'executive', department: 'executive', name: 'Executive Overview',
     widgets: [
       kpi(9, 'revenue', 'הכנסה', 'currency'),

@@ -22,6 +22,11 @@ const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fie
   { id: 'mailchimp', name: 'Mailchimp', emoji: '✉️', fields: [
     { key: 'api_key', label: 'API Key', placeholder: 'xxxx-usXX' },
   ] },
+  { id: 'helix_ops', name: 'HELIX OPS (קמפיינים A/B)', emoji: '🅰️🅱️', fields: [
+    { key: 'base_url', label: 'HELIX OPS URL', placeholder: 'https://ops.helix…' },
+    { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
+    { key: 'ops_workspace_id', label: 'OPS Workspace ID', placeholder: 'uuid' },
+  ] },
 ];
 
 export default function ConnectPage() {

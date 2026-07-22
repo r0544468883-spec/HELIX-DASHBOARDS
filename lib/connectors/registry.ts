@@ -5,6 +5,7 @@ import { fetchStripeMetrics } from './stripe';
 import { fetchShopifyMetrics } from './shopify';
 import { fetchPlausibleMetrics } from './plausible';
 import { fetchMailchimpMetrics } from './mailchimp';
+import { fetchHelixOpsMetrics } from './helixops';
 import { accessTokenFromRefresh } from '@/lib/google-token';
 import { decryptConfig } from '@/lib/secrets';
 
@@ -39,10 +40,14 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
       if (!config.api_key) return [];
       return fetchMailchimpMetrics(config.api_key);
     }
+    if (provider === 'helix_ops') {
+      if (!config.base_url || !config.api_key || !config.ops_workspace_id) return [];
+      return fetchHelixOpsMetrics(config.base_url, config.api_key, config.ops_workspace_id);
+    }
   } catch {
     return [];
   }
   return [];
 }
 
-export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp'] as const;
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops'] as const;
