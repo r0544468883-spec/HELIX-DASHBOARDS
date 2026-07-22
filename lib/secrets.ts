@@ -9,7 +9,7 @@ const PREFIX = 'enc:v1:';
 
 // Fields that hold secrets and must be encrypted. Non-secret fields (propertyId,
 // ad_account_id, shop) stay plaintext so they remain queryable/inspectable.
-const SECRET_FIELDS = ['refresh_token', 'access_token', 'secret_key', 'api_key'];
+const SECRET_FIELDS = ['refresh_token', 'access_token', 'secret_key', 'api_key', 'api_secret'];
 
 export function encryptValue(plain: string): string {
   if (!KEY) return plain;

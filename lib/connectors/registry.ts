@@ -6,6 +6,8 @@ import { fetchShopifyMetrics } from './shopify';
 import { fetchPlausibleMetrics } from './plausible';
 import { fetchMailchimpMetrics } from './mailchimp';
 import { fetchHelixOpsMetrics } from './helixops';
+import { fetchRavMesserMetrics } from './ravmesser';
+import { fetchActiveTrailMetrics } from './activetrail';
 import { accessTokenFromRefresh } from '@/lib/google-token';
 import { decryptConfig } from '@/lib/secrets';
 
@@ -44,10 +46,18 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
       if (!config.base_url || !config.api_key || !config.ops_workspace_id) return [];
       return fetchHelixOpsMetrics(config.base_url, config.api_key, config.ops_workspace_id);
     }
+    if (provider === 'ravmesser') {
+      if (!config.api_key) return [];
+      return fetchRavMesserMetrics(config.api_key, config.api_secret);
+    }
+    if (provider === 'activetrail') {
+      if (!config.api_key) return [];
+      return fetchActiveTrailMetrics(config.api_key);
+    }
   } catch {
     return [];
   }
   return [];
 }
 
-export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops'] as const;
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'ravmesser', 'activetrail'] as const;

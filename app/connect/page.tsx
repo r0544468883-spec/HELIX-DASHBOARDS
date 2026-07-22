@@ -22,6 +22,13 @@ const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fie
   { id: 'mailchimp', name: 'Mailchimp', emoji: '✉️', fields: [
     { key: 'api_key', label: 'API Key', placeholder: 'xxxx-usXX' },
   ] },
+  { id: 'ravmesser', name: 'רב-מסר (Responder)', emoji: '📨', fields: [
+    { key: 'api_key', label: 'User Key', placeholder: 'מ-support@responder.co.il' },
+    { key: 'api_secret', label: 'User Secret', placeholder: 'אופציונלי' },
+  ] },
+  { id: 'activetrail', name: 'ActiveTrail', emoji: '📩', fields: [
+    { key: 'api_key', label: 'API Key', placeholder: 'מהגדרות ActiveTrail → API' },
+  ] },
   { id: 'helix_ops', name: 'HELIX OPS (קמפיינים A/B)', emoji: '🅰️🅱️', fields: [
     { key: 'base_url', label: 'HELIX OPS URL', placeholder: 'https://ops.helix…' },
     { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
