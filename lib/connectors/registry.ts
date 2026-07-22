@@ -8,6 +8,7 @@ import { fetchMailchimpMetrics } from './mailchimp';
 import { fetchHelixOpsMetrics } from './helixops';
 import { fetchRavMesserMetrics } from './ravmesser';
 import { fetchActiveTrailMetrics } from './activetrail';
+import { fetchInforuMetrics } from './inforu';
 import { accessTokenFromRefresh } from '@/lib/google-token';
 import { decryptConfig } from '@/lib/secrets';
 
@@ -54,10 +55,14 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
       if (!config.api_key) return [];
       return fetchActiveTrailMetrics(config.api_key);
     }
+    if (provider === 'inforu') {
+      if (!config.api_key) return [];
+      return fetchInforuMetrics(config.api_key);
+    }
   } catch {
     return [];
   }
   return [];
 }
 
-export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'ravmesser', 'activetrail'] as const;
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'ravmesser', 'activetrail', 'inforu'] as const;

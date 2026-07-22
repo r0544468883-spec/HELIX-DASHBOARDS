@@ -29,6 +29,9 @@ const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fie
   { id: 'activetrail', name: 'ActiveTrail', emoji: '📩', fields: [
     { key: 'api_key', label: 'API Key', placeholder: 'מהגדרות ActiveTrail → API' },
   ] },
+  { id: 'inforu', name: 'InforU', emoji: '📧', fields: [
+    { key: 'api_key', label: 'API Key', placeholder: 'מחשבון InforU (Basic token)' },
+  ] },
   { id: 'helix_ops', name: 'HELIX OPS (קמפיינים A/B)', emoji: '🅰️🅱️', fields: [
     { key: 'base_url', label: 'HELIX OPS URL', placeholder: 'https://ops.helix…' },
     { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
