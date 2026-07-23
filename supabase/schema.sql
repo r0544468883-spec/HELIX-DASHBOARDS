@@ -138,13 +138,30 @@ create table if not exists deals (
 );
 create index if not exists idx_deals_ws on deals(workspace_id, stage);
 
+-- ── Custom templates — a workspace uploads its OWN WhatsApp templates, merged over
+-- the built-in catalog (a custom row with the same key OVERRIDES the built-in one) ──
+create table if not exists custom_templates (
+  id           uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id) on delete cascade,
+  kind         text not null,                         -- 'whatsapp'
+  key          text not null,                         -- logical key (overrides a built-in with same key)
+  definition   jsonb not null,                        -- the template shape (per kind)
+  active       boolean default true,
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now(),
+  unique (workspace_id, kind, key)
+);
+create index if not exists idx_custom_tpl on custom_templates(workspace_id, kind, active);
+
 alter table digest_subscriptions enable row level security;
 alter table bot_links            enable row level security;
 alter table deals                enable row level security;
+alter table custom_templates     enable row level security;
 do $$ begin
   create policy digest_member on digest_subscriptions for all using (is_member(workspace_id));
   create policy botlink_member on bot_links for all using (is_member(workspace_id));
   create policy deals_member on deals for all using (is_member(workspace_id));
+  create policy custom_tpl_member on custom_templates for all using (is_member(workspace_id));
 exception when duplicate_object then null; end $$;
 
 -- Create a workspace + owner membership atomically (SECURITY DEFINER bypasses
