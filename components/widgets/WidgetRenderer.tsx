@@ -1,11 +1,47 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   RadialBarChart, RadialBar, FunnelChart, Funnel, Cell, LabelList,
 } from 'recharts';
 import type { WidgetData, WidgetConfig } from '@/lib/types';
 import { formatValue, BRAND, PALETTE } from '@/lib/format';
+
+// Hero effect (HELIX Dashboards): KPI numbers count up on mount / on data change.
+// Pure rAF — no new dependency — and honors prefers-reduced-motion.
+function useCountUp(target: number, duration = 900) {
+  const [display, setDisplay] = useState(0);
+  const fromRef = useRef(0);
+  const rafRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !Number.isFinite(target)) {
+      setDisplay(target);
+      fromRef.current = target;
+      return;
+    }
+    const from = fromRef.current;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      setDisplay(from + (target - from) * eased);
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+      else fromRef.current = target;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+  return display;
+}
+
+function KpiValue({ value, fmt, color }: { value: number; fmt?: WidgetConfig['format']; color: string }) {
+  const animated = useCountUp(value);
+  return <div className="text-[32px] font-black leading-none" style={{ color }}>{formatValue(animated, fmt)}</div>;
+}
 
 // Renders one widget's body from already-fetched WidgetData. Pure presentational.
 export default function WidgetRenderer({ data, config }: { data: WidgetData; config?: WidgetConfig }) {
@@ -16,7 +52,7 @@ export default function WidgetRenderer({ data, config }: { data: WidgetData; con
     const up = (data.delta ?? 0) >= 0;
     return (
       <div className="flex flex-col justify-center h-full">
-        <div className="text-[32px] font-black leading-none" style={{ color }}>{formatValue(data.value, fmt)}</div>
+        <KpiValue value={data.value} fmt={fmt} color={color} />
         {data.delta !== undefined && (
           <div className={`mt-1 text-[13px] font-semibold ${up ? 'text-emerald-600' : 'text-red-500'}`}>
             {up ? '▲' : '▼'} {formatValue(Math.abs(data.delta), 'percent')}
@@ -35,8 +71,8 @@ export default function WidgetRenderer({ data, config }: { data: WidgetData; con
           <YAxis tick={{ fontSize: 11, fill: 'var(--ink-secondary)' }} tickLine={false} axisLine={false} width={44} />
           <Tooltip formatter={(v: number) => formatValue(v, fmt)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
           {Chart === BarChart
-            ? <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
-            : <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} dot={false} />}
+            ? <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={900} animationEasing="ease-out" />
+            : <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} dot={false} isAnimationActive animationDuration={900} animationEasing="ease-out" />}
         </Chart>
       </ResponsiveContainer>
     );
@@ -48,7 +84,7 @@ export default function WidgetRenderer({ data, config }: { data: WidgetData; con
       <div className="relative h-full">
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: pct, fill: color }]} startAngle={210} endAngle={-30}>
-            <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'var(--border)' }} />
+            <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'var(--border)' }} isAnimationActive animationDuration={900} animationEasing="ease-out" />
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
