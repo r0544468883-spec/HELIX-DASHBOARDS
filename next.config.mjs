@@ -10,6 +10,7 @@ const nextConfig = {
     '/api/digest': ['./lib/nyyon/assets/**'],
     '/api/cron/digest': ['./lib/nyyon/assets/**'],
     '/api/telegram': ['./lib/nyyon/assets/**'],
+    '/api/whatsapp': ['./lib/nyyon/assets/**'],
   },
 };
 export default nextConfig;

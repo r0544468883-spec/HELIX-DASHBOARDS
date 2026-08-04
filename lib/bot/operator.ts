@@ -2,8 +2,13 @@
 // to drive HELIX DASHBOARDS in natural Hebrew. A linked chat (bot_links) routes
 // HERE and gets its workspace's REAL data. Every dashboards feature is reachable:
 // list dashboards, get a dashboard's numbers, trigger a digest, query one metric.
-import { workspaceDigest } from '@/lib/digest-data';
+import { workspaceDigestRich } from '@/lib/digest-data';
 import { formatValue } from '@/lib/format';
+
+// An operator reply is text, optionally with ONE rendered figure (digest replies
+// carry a chart; list/metric/help replies are text-only). Both bots (Telegram,
+// WhatsApp) send the text and, when present, the figure as a photo.
+export type OperatorReply = { text: string; figure?: { png: Buffer; template: string } | null };
 
 // Hebrew keyword → department key (a dashboard). Shared with the digest keyword flow.
 export const DEPT_KEYWORDS: Record<string, string> = {
@@ -68,41 +73,41 @@ async function metricLookup(client: unknown, workspaceId: string, query: string)
  * Route an operator message to the right dashboards action and return a Hebrew reply.
  * `client` is a service-role/admin Supabase client (bypasses RLS for the workspace).
  */
-export async function handleOperatorCommand(client: unknown, workspaceId: string, text: string): Promise<string> {
+export async function handleOperatorCommand(client: unknown, workspaceId: string, text: string): Promise<OperatorReply> {
   const t = (text ?? '').trim();
-  if (!t || /^(עזרה|help|\?|תפריט)/i.test(t)) return HELP;
+  if (!t || /^(עזרה|help|\?|תפריט)/i.test(t)) return { text: HELP };
 
   // List dashboards.
   if (/(רשימ|רשימת).*(דשבורד|דוח)|^דשבורדים|list.*dash/i.test(t)) {
-    return listDashboards(client, workspaceId);
+    return { text: await listDashboards(client, workspaceId) };
   }
 
   // Specific metric lookup: "מדד <x>" / "כמה <x>" / "metric <x>".
   const metricMatch = t.match(/^(?:מדד|כמה|metric)\s+(.+)/i);
   if (metricMatch) {
-    return metricLookup(client, workspaceId, metricMatch[1]);
+    return { text: await metricLookup(client, workspaceId, metricMatch[1]) };
   }
 
   // Numbers of a dashboard ("מדדים <dept>") → digest of that dashboard.
-  // Trigger a digest / summary ("דוח" / "סיכום" / "דשבורד <dept>").
+  // Trigger a digest / summary ("דוח" / "סיכום" / "דשבורד <dept>") — these carry a figure.
   if (/^(דוח|סיכום|מדדים|דשבורד|report|digest|summary)/i.test(t)) {
     const dept = detectDept(t);
     try {
-      return await workspaceDigest(client, workspaceId, dept);
+      return await workspaceDigestRich(client, workspaceId, dept);
     } catch (e) {
-      return `שגיאה בהפקת הדוח: ${e instanceof Error ? e.message : 'לא ידועה'}`;
+      return { text: `שגיאה בהפקת הדוח: ${e instanceof Error ? e.message : 'לא ידועה'}` };
     }
   }
 
-  // Bare department keyword ("מכירות") → its digest.
+  // Bare department keyword ("מכירות") → its digest (with figure).
   const dept = detectDept(t);
   if (dept !== 'executive' || /הנהלה|executive/i.test(t)) {
     try {
-      return await workspaceDigest(client, workspaceId, dept);
+      return await workspaceDigestRich(client, workspaceId, dept);
     } catch {
-      return HELP;
+      return { text: HELP };
     }
   }
 
-  return HELP;
+  return { text: HELP };
 }
