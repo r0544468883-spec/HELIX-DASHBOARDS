@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdmin } from '@/lib/supabase/admin';
-import { workspaceDigest } from '@/lib/digest-data';
+import { workspaceDigestRich } from '@/lib/digest-data';
+import { uploadDigestFigure } from '@/lib/digest-storage';
 import { deliver, type Channel } from '@/lib/channels';
 
 export const dynamic = 'force-dynamic';
@@ -21,8 +22,9 @@ export async function GET(req: Request) {
   let sent = 0;
   for (const s of subs ?? []) {
     try {
-      const text = await workspaceDigest(admin, s.workspace_id as string, s.department as string);
-      const ok = await deliver(s.channel as Channel, s.target as string, 'HELIX — סיכום יומי', text);
+      const { text, figure } = await workspaceDigestRich(admin, s.workspace_id as string, s.department as string);
+      const imageUrl = figure ? await uploadDigestFigure(figure.png, `${s.workspace_id}-${s.department}`) ?? undefined : undefined;
+      const ok = await deliver(s.channel as Channel, s.target as string, 'HELIX — סיכום יומי', text, imageUrl);
       if (ok) sent++;
     } catch { /* one failing subscription must not abort the run */ }
   }
