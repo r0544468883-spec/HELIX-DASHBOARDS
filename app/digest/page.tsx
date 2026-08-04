@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { subscribeDigest, linkTelegram } from '@/app/actions-digest';
+import { subscribeDigest, linkTelegram, linkWhatsApp } from '@/app/actions-digest';
 
 const DEPARTMENTS = [
   ['executive', 'הנהלה'], ['marketing', 'שיווק'], ['sales', 'מכירות'], ['finance', 'פיננסים'],
@@ -17,6 +17,7 @@ export default function DigestPage() {
   const [target, setTarget] = useState('');
   const [hour, setHour] = useState(5);
   const [chatId, setChatId] = useState('');
+  const [waPhone, setWaPhone] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
 
   async function subscribe() {
@@ -26,6 +27,10 @@ export default function DigestPage() {
   async function link() {
     const res = await linkTelegram(chatId);
     setMsg('error' in res && res.error ? 'שגיאה: ' + res.error : '✓ הצ׳אט חובר — הבוט יחזיר נתונים אמיתיים.');
+  }
+  async function linkWa() {
+    const res = await linkWhatsApp(waPhone);
+    setMsg('error' in res && res.error ? 'שגיאה: ' + res.error : '✓ מספר הוואטסאפ חובר — הבוט יחזיר נתונים אמיתיים.');
   }
 
   const inp = 'rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none focus:border-emerald-500';
@@ -52,6 +57,15 @@ export default function DigestPage() {
         <div className="flex flex-wrap gap-2 items-center">
           <input className={inp + ' flex-1 min-w-[180px]'} dir="ltr" value={chatId} onChange={(e) => setChatId(e.target.value)} placeholder="Telegram chat id" />
           <button onClick={link} className="text-[13px] font-bold px-4 py-2 rounded-lg bg-black text-white">חבר צ׳אט</button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 mt-4">
+        <h2 className="text-[15px] font-bold mb-1">חיבור בוט וואטסאפ</h2>
+        <p className="text-[12px] text-[var(--ink-secondary)] mb-3">שלח הודעה לבוט הוואטסאפ, והדבק כאן את מספר הטלפון שממנו שלחת (עם קידומת מדינה, למשל 972501234567) — כדי שהבוט יחזיר נתונים אמיתיים.</p>
+        <div className="flex flex-wrap gap-2 items-center">
+          <input className={inp + ' flex-1 min-w-[180px]'} dir="ltr" value={waPhone} onChange={(e) => setWaPhone(e.target.value)} placeholder="972501234567" />
+          <button onClick={linkWa} className="text-[13px] font-bold px-4 py-2 rounded-lg bg-emerald-600 text-white">חבר מספר</button>
         </div>
       </div>
       {msg && <p className="mt-4 text-[14px]">{msg}</p>}
