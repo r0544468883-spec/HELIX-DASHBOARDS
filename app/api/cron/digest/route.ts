@@ -4,7 +4,7 @@ import { workspaceDigestRich, workspaceSlipping } from '@/lib/digest-data';
 import { uploadDigestFigure } from '@/lib/digest-storage';
 import { deliver, type Channel } from '@/lib/channels';
 import { resolveMode } from '@/lib/autonomy/resolve';
-import { dispatchCrossAction } from '@/lib/autonomy/dispatch';
+import { dispatchCrossAction, targetForDepartment } from '@/lib/autonomy/dispatch';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -38,7 +38,8 @@ export async function GET(req: Request) {
       if (slip.length) {
         const mode = await resolveMode(admin, s.workspace_id as string, 'dash.cross_act');
         if (mode !== 'advisor') {
-          const r = await dispatchCrossAction('growth-doctor', { reason: `Dashboards: ${slip.map((d) => d.metric).join(', ')} מידרדרים` });
+          const target = targetForDepartment(s.department as string);
+          const r = await dispatchCrossAction(target, { reason: `Dashboards/${s.department}: ${slip.map((d) => d.metric).join(', ')} מידרדרים` });
           if (r.ok) dispatched++;
         }
       }

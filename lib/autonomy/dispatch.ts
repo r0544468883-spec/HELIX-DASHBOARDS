@@ -7,11 +7,25 @@
 // exactly like the read connectors. Nothing dispatches unless dash.cross_act is
 // explicitly enabled AND the target product is wired.
 
-export type CrossTarget = 'growth-doctor';
+export type CrossTarget = 'growth-doctor' | 'ops' | 'rank' | 'sdr';
 
 const REGISTRY: Record<CrossTarget, { url?: string; path: string }> = {
   'growth-doctor': { url: process.env.GROWTH_DOCTOR_URL, path: '/api/act/trigger' },
+  'ops': { url: process.env.OPS_URL, path: '/api/act/trigger' },
+  'rank': { url: process.env.RANK_URL, path: '/api/act/trigger' },
+  'sdr': { url: process.env.SDR_URL, path: '/api/act/trigger' },
 };
+
+// Map a dashboard department to the product that should act on its slipping KPIs.
+// Conversion/retention → Growth Doctor; marketing/ads → OPS; SEO → Rank;
+// sales/pipeline → SDR. Unknown departments default to Growth Doctor (CRO).
+export function targetForDepartment(department: string): CrossTarget {
+  const d = department.toLowerCase();
+  if (d.includes('market') || d.includes('campaign') || d.includes('ads')) return 'ops';
+  if (d.includes('seo') || d.includes('geo') || d.includes('rank') || d.includes('content')) return 'rank';
+  if (d.includes('sales') || d.includes('pipeline') || d.includes('crm')) return 'sdr';
+  return 'growth-doctor';
+}
 
 export interface CrossActPayload {
   workspaceId?: string | null; // target-product workspace id, if known (cross-product ids differ)
