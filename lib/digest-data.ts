@@ -4,6 +4,8 @@ import { demoWidgetData } from './metrics';
 import { resolveWidgetData } from './metrics-db';
 import { composeDigest } from './digest';
 import { digestFigurePng } from './digest-figure';
+import { slippingKpis } from './autonomy/degradation';
+import type { Degradation } from './autonomy/types';
 
 type Client = {
   from: (t: string) => {
@@ -36,6 +38,13 @@ export async function workspaceDigestRich(client: unknown, workspaceId: string, 
     digestFigurePng(widgets, dataById).catch(() => null),
   ]);
   return { text, figure };
+}
+
+// Slipping KPIs for a workspace department — the hub's cross-product signal
+// (Von rule 3). Reuses the same widgets+data the digest is built from.
+export async function workspaceSlipping(client: unknown, workspaceId: string, department: string): Promise<Degradation[]> {
+  const { widgets, dataById } = await loadDigestInputs(client, workspaceId, department);
+  return slippingKpis(widgets, dataById);
 }
 
 // Load a workspace department's widgets + resolved data (real data with a demo
