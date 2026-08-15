@@ -2,6 +2,7 @@ import type { WidgetDef, WidgetData } from './types';
 import { formatValue } from './format';
 import { narrate } from './ollama';
 import { slippingKpis } from './autonomy/degradation';
+import { narrativeIsClean } from './agents/dashboards/verify';
 
 // Turn a dashboard's widgets+data into a short Hebrew digest. Ollama/Claude add
 // a human narrative; if no model is configured we still return the raw KPI lines.
@@ -32,5 +33,10 @@ export async function composeDigest(dashboardName: string, widgets: WidgetDef[],
 
   const header = `📊 ${dashboardName} — סיכום יומי`;
   const body = slipFacts ? `${facts}\n\n${slipFacts}` : facts;
-  return narrative ? `${header}\n\n${narrative}\n\n—\n${body}` : `${header}\n\n${body}`;
+
+  // Critic gate (§4b): the narrator may have invented a figure. If any number in
+  // the narrative isn't backed by the KPI facts, drop the narrative and ship the
+  // raw verified numbers — a business digest must never report a made-up number.
+  const clean = narrative ? narrativeIsClean(narrative, `${facts}\n${slipFacts}`) : { ok: false, strayNumbers: [] };
+  return narrative && clean.ok ? `${header}\n\n${narrative}\n\n—\n${body}` : `${header}\n\n${body}`;
 }
