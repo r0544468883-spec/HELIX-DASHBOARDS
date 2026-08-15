@@ -33,10 +33,20 @@ export async function composeDigest(dashboardName: string, widgets: WidgetDef[],
 
   const header = `📊 ${dashboardName} — סיכום יומי`;
   const body = slipFacts ? `${facts}\n\n${slipFacts}` : facts;
+  const allFacts = `${facts}\n${slipFacts}`;
 
-  // Critic gate (§4b): the narrator may have invented a figure. If any number in
-  // the narrative isn't backed by the KPI facts, drop the narrative and ship the
-  // raw verified numbers — a business digest must never report a made-up number.
-  const clean = narrative ? narrativeIsClean(narrative, `${facts}\n${slipFacts}`) : { ok: false, strayNumbers: [] };
-  return narrative && clean.ok ? `${header}\n\n${narrative}\n\n—\n${body}` : `${header}\n\n${body}`;
+  // Department (§4b): Researcher = the KPI facts above; Maker = narrate; Critic =
+  // narrativeIsClean; Editor = one revise pass. If the narrative states a number
+  // not backed by the data, the Editor re-narrates using ONLY the facts; if it's
+  // still unclean, we drop it and ship the raw verified numbers (a business digest
+  // must never report a made-up figure).
+  let finalNarrative = narrative;
+  if (finalNarrative && !narrativeIsClean(finalNarrative, allFacts).ok) {
+    const revised = await narrate([
+      { role: 'system', content: 'אתה עורך. שכתב את הסיכום כך שישתמש אך ורק במספרים שמופיעים בעובדות שסופקו. אל תמציא אף מספר. 2-3 משפטים, עברית טבעית.' },
+      { role: 'user', content: `עובדות (המקור היחיד למספרים):\n${allFacts}\n\nסיכום לתקן:\n${finalNarrative}` },
+    ]);
+    finalNarrative = revised && narrativeIsClean(revised, allFacts).ok ? revised : '';
+  }
+  return finalNarrative ? `${header}\n\n${finalNarrative}\n\n—\n${body}` : `${header}\n\n${body}`;
 }
