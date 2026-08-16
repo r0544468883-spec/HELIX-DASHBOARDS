@@ -1,9 +1,7 @@
 import type { WidgetDef, WidgetData } from './types';
 import { formatValue } from './format';
-import { narrate } from './ollama';
 import { slippingKpis } from './autonomy/degradation';
-import { narrativeIsClean } from './agents/dashboards/verify';
-import { recommendAction } from './agents/dashboards/recommender';
+import { composeNarrative } from './agents/dashboards/department-chief';
 
 // Turn a dashboard's widgets+data into a short Hebrew digest. Ollama/Claude add
 // a human narrative; if no model is configured we still return the raw KPI lines.
@@ -27,33 +25,14 @@ export async function composeDigest(dashboardName: string, widgets: WidgetDef[],
   const slipping = slippingKpis(widgets, dataById);
   const slipFacts = slipping.map((s) => `⚠️ ${s.detail}`).join('\n');
 
-  const narrative = await narrate([
-    { role: 'system', content: 'אתה אנליסט עסקי שכותב בעברית טבעית, קצרה ואנושית. אל תמציא מספרים — השתמש רק בנתונים שקיבלת. 2-3 משפטים, טון ישראלי ענייני. הדגש חריגות והמלצה אחת.' },
-    { role: 'user', content: `דשבורד "${dashboardName}". הנתונים:\n${facts}${slipFacts ? `\n\nמדדים שמידרדרים:\n${slipFacts}` : ''}\n\nכתוב סיכום יומי קצר.` },
-  ]);
-
   const header = `📊 ${dashboardName} — סיכום יומי`;
   const body = slipFacts ? `${facts}\n\n${slipFacts}` : facts;
-  const allFacts = `${facts}\n${slipFacts}`;
 
-  // Department (§4b): Researcher = the KPI facts above; Maker = narrate; Critic =
-  // narrativeIsClean; Editor = one revise pass. If the narrative states a number
-  // not backed by the data, the Editor re-narrates using ONLY the facts; if it's
-  // still unclean, we drop it and ship the raw verified numbers (a business digest
-  // must never report a made-up figure).
-  let finalNarrative = narrative;
-  if (finalNarrative && !narrativeIsClean(finalNarrative, allFacts).ok) {
-    const revised = await narrate([
-      { role: 'system', content: 'אתה עורך. שכתב את הסיכום כך שישתמש אך ורק במספרים שמופיעים בעובדות שסופקו. אל תמציא אף מספר. 2-3 משפטים, עברית טבעית.' },
-      { role: 'user', content: `עובדות (המקור היחיד למספרים):\n${allFacts}\n\nסיכום לתקן:\n${finalNarrative}` },
-    ]);
-    finalNarrative = revised && narrativeIsClean(revised, allFacts).ok ? revised : '';
-  }
+  // Department Chief (§4b) runs the full team: Researcher (the KPI facts above) →
+  // Maker → Critic → Editor → Recommender, and returns only verified output.
+  const { narrative, recommendation } = await composeNarrative(dashboardName, facts, slipFacts);
+  const recLine = recommendation ? `\n\n👉 המלצה: ${recommendation}` : '';
 
-  // Recommender: one concrete action to take about the numbers (grounded on facts).
-  const rec = await recommendAction(facts, slipFacts).catch(() => '');
-  const recLine = rec && narrativeIsClean(rec, allFacts).ok ? `\n\n👉 המלצה: ${rec}` : '';
-
-  const top = finalNarrative ? `${header}\n\n${finalNarrative}` : header;
+  const top = narrative ? `${header}\n\n${narrative}` : header;
   return `${top}${recLine}\n\n—\n${body}`;
 }
