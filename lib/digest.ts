@@ -3,6 +3,7 @@ import { formatValue } from './format';
 import { narrate } from './ollama';
 import { slippingKpis } from './autonomy/degradation';
 import { narrativeIsClean } from './agents/dashboards/verify';
+import { recommendAction } from './agents/dashboards/recommender';
 
 // Turn a dashboard's widgets+data into a short Hebrew digest. Ollama/Claude add
 // a human narrative; if no model is configured we still return the raw KPI lines.
@@ -48,5 +49,11 @@ export async function composeDigest(dashboardName: string, widgets: WidgetDef[],
     ]);
     finalNarrative = revised && narrativeIsClean(revised, allFacts).ok ? revised : '';
   }
-  return finalNarrative ? `${header}\n\n${finalNarrative}\n\n—\n${body}` : `${header}\n\n${body}`;
+
+  // Recommender: one concrete action to take about the numbers (grounded on facts).
+  const rec = await recommendAction(facts, slipFacts).catch(() => '');
+  const recLine = rec && narrativeIsClean(rec, allFacts).ok ? `\n\n👉 המלצה: ${rec}` : '';
+
+  const top = finalNarrative ? `${header}\n\n${finalNarrative}` : header;
+  return `${top}${recLine}\n\n—\n${body}`;
 }
