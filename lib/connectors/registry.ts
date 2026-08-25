@@ -7,6 +7,8 @@ import { fetchPlausibleMetrics } from './plausible';
 import { fetchMailchimpMetrics } from './mailchimp';
 import { fetchHelixOpsMetrics } from './helixops';
 import { fetchHelixSdrMetrics } from './helix-sdr';
+import { fetchHelixRankMetrics } from './helixrank';
+import { fetchHelixGrowthMetrics } from './helix-growth-doctor';
 import { fetchRavMesserMetrics } from './ravmesser';
 import { fetchActiveTrailMetrics } from './activetrail';
 import { fetchInforuMetrics } from './inforu';
@@ -54,6 +56,18 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
       if (!baseUrl || !secret || !config.sdr_workspace_id) return [];
       return fetchHelixSdrMetrics(baseUrl, secret, config.sdr_workspace_id);
     }
+    if (provider === 'helix_rank') {
+      const baseUrl = config.base_url || process.env.RANK_EXPORT_URL;
+      const secret = config.api_key || process.env.EXPORT_SECRET;
+      if (!baseUrl || !secret || !config.rank_site_id) return [];
+      return fetchHelixRankMetrics(baseUrl, secret, config.rank_site_id);
+    }
+    if (provider === 'helix_growth') {
+      const baseUrl = config.base_url || process.env.GROWTH_EXPORT_URL;
+      const secret = config.api_key || process.env.EXPORT_SECRET;
+      if (!baseUrl || !secret || !config.gd_workspace_id) return [];
+      return fetchHelixGrowthMetrics(baseUrl, secret, config.gd_workspace_id);
+    }
     if (provider === 'ravmesser') {
       if (!config.api_key) return [];
       return fetchRavMesserMetrics(config.api_key, config.api_secret);
@@ -72,4 +86,4 @@ export async function runConnector(provider: string, storedConfig: ConnectorConf
   return [];
 }
 
-export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'helix_sdr', 'ravmesser', 'activetrail', 'inforu'] as const;
+export const LIVE_PROVIDERS = ['ga4', 'meta_ads', 'stripe', 'shopify', 'plausible', 'mailchimp', 'helix_ops', 'helix_sdr', 'helix_rank', 'helix_growth', 'ravmesser', 'activetrail', 'inforu'] as const;

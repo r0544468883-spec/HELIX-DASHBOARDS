@@ -1,5 +1,6 @@
 // Model Router — Ollama first (local, free, private), Claude fallback (quality).
 // Used to turn dashboard numbers into a Hebrew narrative for the digest/bot.
+import { clean } from '@/lib/clean-text';
 
 type Msg = { role: 'user' | 'system'; content: string };
 
@@ -41,7 +42,7 @@ async function askClaude(messages: Msg[]): Promise<string | null> {
 
 // Route: prefer Ollama (privacy/cost), fall back to Claude, else a plain summary.
 export async function narrate(messages: Msg[]): Promise<string> {
-  return (await askOllama(messages)) ?? (await askClaude(messages)) ?? '';
+  return clean((await askOllama(messages)) ?? (await askClaude(messages)) ?? '');
 }
 
 export function modelInUse(): 'ollama' | 'claude' | 'none' {

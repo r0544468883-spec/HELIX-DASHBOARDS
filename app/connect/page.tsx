@@ -42,6 +42,16 @@ const PROVIDERS: { id: string; name: string; emoji: string; oauth?: boolean; fie
     { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
     { key: 'sdr_workspace_id', label: 'SDR Workspace ID', placeholder: 'uuid' },
   ] },
+  { id: 'helix_rank', name: 'HELIX Rank (SEO + GEO)', emoji: '🔎', fields: [
+    { key: 'base_url', label: 'HELIX Rank URL', placeholder: 'https://rank.helix…' },
+    { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
+    { key: 'rank_site_id', label: 'Rank Site ID', placeholder: 'uuid' },
+  ] },
+  { id: 'helix_growth', name: 'HELIX Growth Doctor (CRO + שימור)', emoji: '🩺', fields: [
+    { key: 'base_url', label: 'HELIX Growth Doctor URL', placeholder: 'https://growth.helix…' },
+    { key: 'api_key', label: 'Export Secret', placeholder: 'xxxx' },
+    { key: 'gd_workspace_id', label: 'Growth Workspace ID', placeholder: 'uuid' },
+  ] },
 ];
 
 export default function ConnectPage() {
