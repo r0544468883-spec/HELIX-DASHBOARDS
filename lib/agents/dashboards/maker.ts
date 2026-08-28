@@ -2,13 +2,16 @@
 // facts. Numbers come ONLY from the facts it's handed (the Researcher's output); the
 // Critic (verify) enforces that afterwards. narrate() is the shared Ollama/Claude client.
 import { narrate } from '../../ollama';
+import { withSkills } from '../../skills/registry';
 
 export async function narrateDigest(dashboardName: string, facts: string, slipFacts: string): Promise<string> {
   return narrate([
     {
       role: 'system',
-      content:
+      content: withSkills(
         'אתה אנליסט עסקי שכותב בעברית טבעית, קצרה ואנושית. אל תמציא מספרים — השתמש רק בנתונים שקיבלת. 2-3 משפטים, טון ישראלי ענייני. הדגש חריגות והמלצה אחת.',
+        ['finance-metrics', 'comms-storytelling', 'helix-brand-voice'],
+      ),
     },
     {
       role: 'user',
